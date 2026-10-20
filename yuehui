@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>我和你有个约会 💕</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    background: linear-gradient(160deg, #ffe6f1 0%, #ffd9ec 35%, #f2dcff 100%);
+    color: #5a2a4a;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body::before, body::after {
+    content: ""; position: fixed; border-radius: 50%; filter: blur(70px); opacity: .55; z-index: 0;
+  }
+  body::before { width: 320px; height: 320px; background: #ff9ec4; top: -110px; left: -110px; }
+  body::after  { width: 380px; height: 380px; background: #b98cff; bottom: -150px; right: -130px; }
+
+  .hearts { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; }
+  .heart { position: absolute; bottom: -70px; opacity: .5; animation: rise linear infinite; }
+  @keyframes rise {
+    0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+    12%  { opacity: .65; }
+    100% { transform: translateY(-118vh) rotate(360deg); opacity: 0; }
+  }
+
+  .app {
+    position: relative; z-index: 2;
+    height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .screen {
+    display: none; flex-direction: column; align-items: center; gap: 18px;
+    width: 100%; max-width: 440px; text-align: center;
+  }
+  .screen.active { display: flex; animation: pop .38s cubic-bezier(.34,1.4,.64,1) both; }
+  @keyframes pop {
+    from { opacity: 0; transform: translateY(14px) scale(.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  h1 {
+    font-size: clamp(26px, 7vw, 34px); margin: 0; letter-spacing: 1px;
+    background: linear-gradient(135deg, #ff4f8b, #c44bff);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  h2 { font-size: clamp(20px, 5.5vw, 24px); margin: 0; color: #7a2f5c; }
+  .sub { margin: 0; font-size: 15px; color: #b76a94; }
+  .sub.small { font-size: 13px; opacity: .75; }
+  .place {
+    margin: 2px 0 0; font-size: 16px; font-weight: 700; color: #e0245e;
+    background: rgba(255,255,255,.65); padding: 10px 18px; border-radius: 14px;
+    box-shadow: 0 6px 16px rgba(224,36,94,.12);
+  }
+  .big-emoji { font-size: 68px; line-height: 1; animation: beat 1s ease-in-out infinite; }
+  @keyframes beat { 0%,100% { transform: scale(1); } 50% { transform: scale(1.16); } }
+
+  .btn {
+    border: none; border-radius: 999px; padding: 16px 30px;
+    font-family: inherit; font-size: 17px; font-weight: 600; color: #fff;
+    background: linear-gradient(135deg, #ff7eb3, #ff5f8f);
+    box-shadow: 0 8px 20px rgba(255, 95, 143, .35);
+    cursor: pointer; user-select: none;
+    transition: transform .16s ease, box-shadow .2s ease;
+  }
+  .btn:not(.dodge):hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 12px 26px rgba(255,95,143,.45); }
+  .btn:not(.dodge):active { transform: scale(.96); }
+
+  .btn.yes { padding: 18px 44px; font-size: 19px; animation: glow 2s ease-in-out infinite; }
+  @keyframes glow {
+    0%,100% { box-shadow: 0 8px 20px rgba(255,95,143,.35); }
+    50%     { box-shadow: 0 8px 32px rgba(255,95,143,.75); }
+  }
+
+  .btn.dodge {
+    background: linear-gradient(135deg, #b9c2d6, #8f9dbb);
+    box-shadow: 0 6px 16px rgba(120,130,160,.3);
+    transition: transform .18s cubic-bezier(.34,1.56,.64,1);
+    will-change: transform;
+  }
+
+  .btn-row { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }
+  .btn-col { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+  .btn-col .btn { width: 100%; }
+  .btn.ghost {
+    background: transparent; color: #b76a94;
+    box-shadow: inset 0 0 0 2px rgba(183,106,148,.35);
+    padding: 11px 26px; font-size: 15px;
+  }
+  .btn.ghost:hover { background: rgba(255,255,255,.6); }
+
+  .bubble {
+    position: fixed; z-index: 60; pointer-events: none;
+    padding: 6px 13px; border-radius: 14px; background: #fff;
+    color: #e0245e; font-size: 14px; font-weight: 600; white-space: nowrap;
+    box-shadow: 0 6px 18px rgba(0,0,0,.14);
+    animation: floatUp 1.4s ease forwards;
+  }
+  @keyframes floatUp {
+    0%   { opacity: 0; transform: translate(-50%, 4px) scale(.8); }
+    20%  { opacity: 1; transform: translate(-50%, -8px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -58px) scale(1); }
+  }
+
+  .overlay {
+    position: fixed; inset: 0; z-index: 100; padding: 22px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(62, 20, 46, .42); backdrop-filter: blur(6px);
+    opacity: 0; pointer-events: none; transition: opacity .25s ease;
+  }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+  .dialog {
+    width: 100%; max-width: 360px; padding: 34px 26px 28px;
+    background: #fff; border-radius: 28px; text-align: center;
+    box-shadow: 0 24px 60px rgba(80, 20, 55, .3);
+    transform: scale(.82); transition: transform .32s cubic-bezier(.34,1.56,.64,1);
+  }
+  .overlay.show .dialog { transform: scale(1); }
+  .dialog .emoji { font-size: 58px; line-height: 1; animation: wobble 1.1s ease-in-out infinite; }
+  @keyframes wobble { 0%,100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+  .ov-text { margin: 16px 0 6px; font-size: 18px; font-weight: 700; color: #6b2a4f; line-height: 1.6; }
+  .ov-count { margin: 0 0 12px; font-size: 13px; color: #c07fa4; min-height: 18px; }
+  .dialog .btn { margin-top: 8px; padding: 12px 30px; font-size: 16px; }
+</style>
+</head>
+<body>
+
+<div class="hearts" id="hearts"></div>
+
+<main class="app">
+
+  <!-- 1. 开始 -->
+  <section class="screen active" id="s-start">
+    <h1>我和你有个约会</h1>
+    <p class="sub">所以……要不要和我约会呀？</p>
+    <div class="btn-row">
+      <button class="btn yes" id="btnYes">愿意 💖</button>
+      <button class="btn dodge" id="btnNo">拒绝 ❌</button>
+      <button class="btn dodge" id="btnThink">再考虑考虑 🤔</button>
+    </div>
+  </section>
+
+  <!-- 2. 选日期 -->
+  <section class="screen" id="s-date">
+    <h2>那什么时候见呢？</h2>
+    <p class="sub">选一个你方便的时间吧～</p>
+    <div class="btn-col">
+      <button class="btn" data-date="本周五晚">本周五晚 🌙</button>
+      <button class="btn" data-date="周六">周六 ☀️</button>
+      <button class="btn" data-date="周天">周天 🌈</button>
+    </div>
+  </section>
+
+  <!-- 3. 选活动 -->
+  <section class="screen" id="s-menu">
+    <h2>我们做点什么好呢？</h2>
+    <p class="sub" id="menuDate"></p>
+    <div class="btn-col">
+      <button class="btn" data-act="杀狼">杀狼 🐺</button>
+      <button class="btn" data-act="王者">王者 🎮</button>
+      <button class="btn" data-act="吃饭">吃饭 🍜</button>
+      <button class="btn" data-act="不可描述">不可描述 🙈</button>
+      <button class="btn" data-act="all">以上都选 ✨</button>
+    </div>
+  </section>
+
+  <!-- 4. 吃饭 -->
+  <section class="screen" id="s-food">
+    <h2>那吃点什么呢？</h2>
+    <p class="sub">挑一个你最想吃的～</p>
+    <div class="btn-col" id="foodBtns">
+      <button class="btn" data-food="火锅">火锅 🍲</button>
+      <button class="btn" data-food="烧烤">烧烤 🍢</button>
+      <button class="btn" data-food="日料">日料 🍣</button>
+      <button class="btn" data-food="西餐">西餐 🍝</button>
+      <button class="btn" data-food="麻辣烫">麻辣烫 🌶️</button>
+      <button class="btn" data-food="奶茶配炸鸡">奶茶配炸鸡 🧋</button>
+    </div>
+    <button class="btn ghost" id="foodBack">← 换一个</button>
+  </section>
+
+  <!-- 5. 不可描述 -->
+  <section class="screen" id="s-secret">
+    <h2>那你想……</h2>
+    <p class="sub">（脸红）</p>
+    <div class="btn-col">
+      <button class="btn" data-secret="亲亲">亲亲 😘</button>
+      <button class="btn" data-secret="抱抱">抱抱 🤗</button>
+      <button class="btn" data-secret="略略略">略略略 😝</button>
+    </div>
+    <button class="btn ghost" id="secretBack">← 换一个</button>
+  </section>
+
+  <!-- 6. 结局 -->
+  <section class="screen" id="s-done">
+    <div class="big-emoji">💖</div>
+    <h2 id="doneText"></h2>
+    <p class="place">🕠 晚上 5 点 20 分</p>
+    <p class="place">📍 南屏街 XXX 号</p>
+    <p class="sub small">说好了，不见不散哦～</p>
+  </section>
+
+</main>
+
+<!-- 弹窗 -->
+<div class="overlay" id="overlay">
+  <div class="dialog">
+    <div class="emoji" id="ovEmoji">🙂</div>
+    <p class="ov-text" id="ovText"></p>
+    <p class="ov-count" id="ovCount"></p>
+    <button class="btn" id="ovBtn">好的</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const $  = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.prototype.slice.call(r.querySelectorAll(s));
+
+  const state = { date: null };
+
+  /* ============ 背景飘心 ============ */
+  (function makeHearts() {
+    const box = $("#hearts");
+    const icons = ["💕", "💗", "💖", "🌸", "✨", "💘", "🎀"];
+    for (let i = 0; i < 20; i++) {
+      const el = document.createElement("span");
+      el.className = "heart";
+      el.textContent = icons[i % icons.length];
+      el.style.left = Math.random() * 100 + "vw";
+      el.style.fontSize = (13 + Math.random() * 22) + "px";
+      el.style.animationDuration = (9 + Math.random() * 11) + "s";
+      el.style.animationDelay = (-Math.random() * 20) + "s";
+      box.appendChild(el);
+    }
+  })();
+
+  /* ============ 切屏 ============ */
+  function show(id) {
+    $$(".screen").forEach(s => s.classList.toggle("active", s.id === id));
+  }
+
+  /* ============ 弹窗 ============ */
+  const overlay = $("#overlay");
+  const ovEmoji = $("#ovEmoji");
+  const ovText  = $("#ovText");
+  const ovCount = $("#ovCount");
+  const ovBtn   = $("#ovBtn");
+  let ovTimer = null;
+
+  function closeOverlay() {
+    clearInterval(ovTimer);
+    overlay.classList.remove("show");
+  }
+
+  function showOverlay(opts) {
+    clearInterval(ovTimer);
+    ovEmoji.textContent = opts.emoji || "🙂";
+    ovText.textContent  = opts.text || "";
+    ovCount.textContent = "";
+    ovBtn.style.display = "none";
+    ovBtn.onclick = null;
+    overlay.classList.add("show");
+
+    if (opts.seconds) {
+      let left = opts.seconds;
+      ovCount.textContent = left + " 秒后返回…";
+      ovTimer = setInterval(function () {
+        left--;
+        if (left <= 0) {
+          clearInterval(ovTimer);
+          closeOverlay();
+          opts.onClose && opts.onClose();
+        } else {
+          ovCount.textContent = left + " 秒后返回…";
+        }
+      }, 1000);
+    } else {
+      ovBtn.textContent = opts.btnText || "好吧";
+      ovBtn.style.display = "inline-block";
+      ovBtn.onclick = function () {
+        closeOverlay();
+        opts.onClose && opts.onClose();
+      };
+    }
+  }
+
+  /* ============ 会跑掉的按钮 ============ */
+  function showBubble(btn) {
+    const r = btn.getBoundingClientRect();
+    const b = document.createElement("div");
+    b.className = "bubble";
+    b.textContent = "你忍心吗-_-";
+    b.style.left = (r.left + r.width / 2) + "px";
+    b.style.top  = Math.max(8, r.top - 36) + "px";
+    document.body.appendChild(b);
+    setTimeout(function () { b.remove(); }, 1400);
+  }
+
+  function initDodge(btn) {
+    let tx = 0, ty = 0, lastMove = 0;
+
+    function dodge() {
+      const r = btn.getBoundingClientRect();
+      const pad = 14;
+      const maxX = Math.max(pad, window.innerWidth  - r.width  - pad);
+      const maxY = Math.max(pad, window.innerHeight - r.height - pad);
+
+      let nx = r.left + (Math.random() * 2 - 1) * 300;
+      let ny = r.top  + (Math.random() * 2 - 1) * 240;
+
+      if (Math.abs(nx - r.left) < 70 && Math.abs(ny - r.top) < 70) {
+        nx = r.left > window.innerWidth / 2 ? r.left - 220 : r.left + 220;
+        ny = r.top + 140;
+      }
+
+      nx = Math.min(Math.max(nx, pad), maxX);
+      ny = Math.min(Math.max(ny, pad), maxY);
+
+      tx += nx - r.left;
+      ty += ny - r.top;
+
+      btn.style.transform =
+        "translate(" + tx + "px," + ty + "px) rotate(" + ((Math.random() * 2 - 1) * 14) + "deg)";
+
+      showBubble(btn);
+    }
+
+    btn.addEventListener("mouseenter", dodge);
+    btn.addEventListener("mousemove", function () {
+      const now = Date.now();
+      if (now - lastMove < 450) return;
+      lastMove = now;
+      dodge();
+    });
+    btn.addEventListener("touchstart", function (e) { e.preventDefault(); dodge(); }, { passive: false });
+    btn.addEventListener("click", function (e) { e.preventDefault(); dodge(); });
+  }
+
+  initDodge($("#btnNo"));
+  initDodge($("#btnThink"));
+
+  /* ============ 流程 ============ */
+
+  // 愿意
+  $("#btnYes").addEventListener("click", function () { show("s-date"); });
+
+  // 选日期
+  $$("#s-date .btn[data-date]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      state.date = btn.dataset.date;
+      $("#menuDate").textContent = "📅 " + state.date;
+      show("s-menu");
+    });
+  });
+
+  // 选活动：只有"吃饭"进入下一步，其余均弹窗 2 秒后返回
+  $$("#s-menu .btn[data-act]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      const act = btn.dataset.act;
+
+      if (act === "吃饭") {
+        show("s-food");
+        return;
+      }
+
+      if (act === "杀狼") {
+        showOverlay({
+          emoji: "🙃",
+          text: "游戏固有乐趣，何不做点更有意义的事？",
+          seconds: 2,
+          onClose: function () { show("s-menu"); }
+        });
+      } else if (act === "王者") {
+        showOverlay({
+          emoji: "😌",
+          text: "这游戏没意思，乖咱不玩",
+          seconds: 2,
+          onClose: function () { show("s-menu"); }
+        });
+      } else if (act === "不可描述") {
+        show("s-secret");
+      } else if (act === "all") {
+        showOverlay({
+          emoji: "😵‍💫",
+          text: "任务过重，时间另择。",
+          seconds: 2,
+          onClose: function () { show("s-menu"); }
+        });
+      }
+    });
+  });
+
+  // 吃饭 -> 选菜 -> 弹出时间地点
+  $$("#foodBtns .btn[data-food]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      const food = btn.dataset.food;
+      showOverlay({
+        emoji: "💌",
+        text: "晚上 5 点 20 分，南屏街 XXX 号，不见不散",
+        btnText: "好，一定到 💖",
+        onClose: function () {
+          $("#doneText").textContent = state.date + "，我们一起去吃 " + food + " 吧！";
+          show("s-done");
+        }
+      });
+    });
+  });
+  $("#foodBack").addEventListener("click", function () { show("s-menu"); });
+
+  // 不可描述子选项：均弹"想得美"2 秒后返回
+  $$("#s-secret .btn[data-secret]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      showOverlay({
+        emoji: "😒",
+        text: "想得美。我是你得不到的人",
+        seconds: 2,
+        onClose: function () { show("s-menu"); }
+      });
+    });
+  });
+  $("#secretBack").addEventListener("click", function () { show("s-menu"); });
+
+})();
+</script>
+</body>
+</html>
